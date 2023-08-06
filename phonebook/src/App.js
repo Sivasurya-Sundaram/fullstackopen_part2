@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import DisplayContacts from "./components/Contacts";
 import AddContact from "./components/AddContact";
 import FilterContact from "./components/FilterContact";
+import contactService from "./services/contacts";
 
 function App() {
   const [persons, setPersons] = useState([]);
@@ -16,8 +16,8 @@ function App() {
         )
       : persons;
   useEffect(() => {
-    axios.get("http://localhost:3001/persons").then((res) => {
-      setPersons(res.data);
+    contactService.getAll().then((contacts) => {
+      setPersons(contacts);
     });
   }, []);
   const handleNameChange = (event) => {
@@ -32,19 +32,52 @@ function App() {
   };
   const handleAddClick = (event) => {
     event.preventDefault();
-    const isNameExist = persons.some((x) => x.name === newName);
-    if (isNameExist) {
-      alert(`"${newName}" is already added to the phonebok`);
-    } else {
-      setPersons(
-        persons.concat({
+    const existingContact = persons.find((x) => x.name === newName);
+    if (existingContact !== undefined) {
+      if (
+        window.confirm(
+          `${newName} is already added to phonebook, replace the old number with a new one?`
+        )
+      ) {
+        const newContact = {
           name: newName,
           number: newNumber,
-          id: persons.length + 1,
+        };
+        contactService
+          .update(existingContact.id, newContact)
+          .then((updatedContact) => {
+            setPersons(
+              persons.map((x) =>
+                x.id === existingContact.id ? updatedContact : x
+              )
+            );
+            setNewName("");
+            setNewNumber("");
+          });
+      }
+    } else {
+      const newContact = {
+        name: newName,
+        number: newNumber,
+      };
+      contactService.create(newContact).then((contact) => {
+        setPersons(persons.concat(contact));
+        setNewName("");
+        setNewNumber("");
+      });
+    }
+  };
+  const handleDeleteClick = (contact) => {
+    if (window.confirm(`Delete ${contact.name}`)) {
+      contactService
+        .deleteContact(contact.id)
+        .then((res) => {
+          console.log(res);
+          setPersons(persons.filter((x) => x.id !== contact.id));
         })
-      );
-      setNewName("");
-      setNewNumber("");
+        .catch((error) => {
+          window.alert(`No Record Found`);
+        });
     }
   };
   return (
@@ -61,7 +94,13 @@ function App() {
       />
       <h2>Numbers</h2>
       <ul>
-        <DisplayContacts contacts={fileredContacts} />
+        {fileredContacts?.map((contact) => (
+          <DisplayContacts
+            key={contact.id}
+            contact={contact}
+            handleDeleteClick={() => handleDeleteClick(contact)}
+          />
+        ))}
       </ul>
     </div>
   );

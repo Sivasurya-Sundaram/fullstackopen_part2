@@ -1,7 +1,8 @@
-const DisplayContacts=({contacts})=>{
-    return(
-        contacts.map((contact)=>
-            <li key={contact.id}>{contact.name}---{contact.number}</li>)
-    );
-}
-export default DisplayContacts
+const DisplayContacts = ({ contact,handleDeleteClick}) => {
+  return (
+    <li>
+      {contact.name}---{contact.number} <button onClick={handleDeleteClick}>delete</button>
+    </li>
+  );
+};
+export default DisplayContacts;
