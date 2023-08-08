@@ -9,6 +9,8 @@ function App() {
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [searchName, setSearchName] = useState("");
+  const [message, setMessage] = useState(null);
+  const [isError, setIsError] = useState(false);
   const fileredContacts =
     searchName.length !== 0
       ? persons.filter((x) =>
@@ -61,6 +63,12 @@ function App() {
         number: newNumber,
       };
       contactService.create(newContact).then((contact) => {
+        setMessage(`Added ${contact.name}`);
+        setIsError(false);
+        setTimeout(() => {
+          setMessage(null)
+          setIsError(false)
+        }, 5000);
         setPersons(persons.concat(contact));
         setNewName("");
         setNewNumber("");
@@ -76,13 +84,22 @@ function App() {
           setPersons(persons.filter((x) => x.id !== contact.id));
         })
         .catch((error) => {
-          window.alert(`No Record Found`);
+          setIsError(true);
+          setMessage(
+            `Info of ${contact.name} has already been removed from server`
+          );
+          setTimeout(() => {
+            setMessage(null)
+            setIsError(false)
+          }, 5000);
+          setPersons(persons.filter((x) => x.id !== contact.id));
         });
     }
   };
   return (
     <div>
       <h2>Phonebook</h2>
+      {message !== null && <Notification message={message} isError={isError} />}
       <FilterContact searchName={searchName} handleChange={handleSearchName} />
       <h2>add a new</h2>
       <AddContact
@@ -105,5 +122,11 @@ function App() {
     </div>
   );
 }
+const Notification = ({ message, isError }) => {
+  if (message === null) {
+    return null;
+  }
+  return <div className={isError ? "error" : "message"}>{message}</div>;
+};
 
 export default App;
